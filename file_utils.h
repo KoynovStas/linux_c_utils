@@ -11,7 +11,13 @@ int set_nonblock_mode(int fd);
 int set_block_mode(int fd);
 
 
+
 int count_files_in_dir(const char *dir_name);
+
+
+
+int write_loop(int fd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop);
+int read_loop(int fd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop);
 
 
 
