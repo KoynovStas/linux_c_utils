@@ -25,10 +25,11 @@
 /*
  * des:   get_addr_of_host function returns IP-address in,
  *        given in network byte order for host (host_name).
- *        for converting this address to a string, use the inet_ntoa().
+ *        for converting this address to a string, use the inet_ntop().
  *
  *
  * in:   host_name - the host name in a string format of such "yandex.ru"
+ *       af        - Valid address types are AF_INET and AF_INET6
  *       addr      - a pointer to the structure of the address,
  *                   which will be copied to the host address.
  *                   This format is an IP address is necessary
@@ -37,7 +38,7 @@
  * ret:  0 - success
  *      -1 - failure (see errno)
  */
-int get_addr_of_host(const char *host_name, struct in_addr *addr)
+int get_addr_of_host(const char *host_name, int af, void *addr)
 {
     struct hostent *host;
 
@@ -49,20 +50,20 @@ int get_addr_of_host(const char *host_name, struct in_addr *addr)
     }
 
 
-    host = gethostbyname(host_name);
+    host = gethostbyname2(host_name, af);
     if( !host )
       return -1;                        //possible DNS is not configured
 
 
-    if( host->h_addrtype != AF_INET )
-      return -1;                        //is not IPv4
+    if( host->h_addrtype != af )
+      return -1;                        //addrtype(format) not correct
 
 
     if( !host->h_addr_list[0] )
       return -1;                        //host is found, but no associated IP no.
 
 
-    memcpy(addr, host->h_addr_list[0], sizeof(struct in_addr));
+    memcpy(addr, host->h_addr_list[0], host->h_length);
 
 
     return 0; //good job

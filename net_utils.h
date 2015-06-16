@@ -6,7 +6,7 @@
 
 
 
-int get_addr_of_host(const char *host_name, struct in_addr *addr);
+int get_addr_of_host(const char *host_name, int af, void *addr);
 
 
 
