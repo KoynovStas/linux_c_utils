@@ -7,7 +7,7 @@
 
 
 int get_addr_of_host(const char *host_name, int af, void *addr);
-
+int get_ip_of_host(const char *host_name, int af, char *IP);
 
 
 

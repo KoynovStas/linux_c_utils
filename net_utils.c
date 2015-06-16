@@ -68,3 +68,53 @@ int get_addr_of_host(const char *host_name, int af, void *addr)
 
     return 0; //good job
 }
+
+
+
+
+/*
+ * des:   get_ip_of_host function returns IP-address in
+ *        string format for host (host_name).
+ *
+ *
+ * in:   host_name - the host name in a string format of such "yandex.ru"
+ *       af        - Valid address types are AF_INET and AF_INET6
+ *       IP        - a pointer to the string for IP address
+ *
+ * ret:  0 - success
+ *      -1 - failure (see errno)
+ */
+int get_ip_of_host(const char *host_name, int af, char *IP)
+{
+    struct hostent *host;
+    int addrstr_len;
+
+
+    if( !host_name || !IP )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    if( af == AF_INET6)
+        addrstr_len = INET6_ADDRSTRLEN;
+    else
+        addrstr_len = INET_ADDRSTRLEN;
+
+
+    host = gethostbyname2(host_name, af);
+    if( !host )
+      return -1;                        //possible DNS is not configured
+
+
+    if( !host->h_addr_list[0] )
+      return -1;                        //host is found, but no associated IP no.
+
+
+    if(inet_ntop(af, (void *)host->h_addr_list[0], IP, addrstr_len) == NULL)
+      return -1;
+
+
+    return 0; //good job
+}
