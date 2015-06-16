@@ -118,3 +118,85 @@ int get_ip_of_host(const char *host_name, int af, char *IP)
 
     return 0; //good job
 }
+
+
+
+/*
+ * des:   get_addr_of_if function returns address specified in
+ *        the network byte order for the network interface if_name.
+ *
+ *
+ * in:   if_name - network interface name in a string format of such "eth0"
+ *       af      - valid address types are AF_INET and AF_INET6
+         addr    - a pointer to the structure of the address,
+ *                 which will be copied to the host address.
+ *                 This format is an IP address is necessary
+ *                 in functions such as connect()
+ *
+ * ret:  0 - success
+ *      -1 - failure (see errno)
+ */
+int get_addr_of_if(const char *if_name, int af, void *addr)
+{
+
+    struct ifaddrs *ifa_head;
+    struct ifaddrs *ifa_cur;
+    int result, addr_len;
+    void *src;
+
+
+
+    if( !if_name || !addr )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    if( getifaddrs(&ifa_head) != 0 )
+      return -1;
+
+
+    result = -1;
+    for( ifa_cur = ifa_head;  ifa_cur;  ifa_cur = ifa_cur->ifa_next )
+    {
+
+        if( !ifa_cur->ifa_name )
+            continue;
+
+
+        if( !ifa_cur->ifa_addr )
+            continue;
+
+
+        if( ifa_cur->ifa_addr->sa_family != af )
+            continue;
+
+
+        if( strcmp(if_name, (char *)ifa_cur->ifa_name) != 0 )
+            continue;
+
+
+
+        if( af == AF_INET6)
+        {
+            addr_len = sizeof(struct sockaddr_in6);
+            src      = &(((struct sockaddr_in6 *)ifa_cur->ifa_addr)->sin6_addr);
+        }
+        else
+        {
+            addr_len = sizeof(struct sockaddr_in);
+            src      = &(((struct sockaddr_in *)ifa_cur->ifa_addr)->sin_addr);
+        }
+
+
+        memcpy(addr, src, addr_len);
+        result = 0;  //good job
+        break;
+    }
+
+
+    freeifaddrs(ifa_head);
+
+    return result;
+}
