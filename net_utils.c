@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -203,7 +204,7 @@ int get_addr_of_if(const char *if_name, int af, void *addr)
 
 
 /*
- * des:   get_ip_of_if function rreturns IP-address in
+ * des:   get_ip_of_if function returns IP-address in
  *        string format for the network interface if_name.
  *
  *
@@ -278,4 +279,69 @@ int get_ip_of_if(const char *if_name, int af, char *IP)
     freeifaddrs(ifa_head);
 
     return result;
+}
+
+
+
+/*
+ * des:   wait_connect function waiting when the complete connect for sd
+ *
+ *
+ * in:   sd             - socket descriptor, for which you spend waiting
+ *       timeout_in_ms  - timeout in milliseconds
+ *
+ * ret:  0 - success
+ *      -1 - failure (see errno)
+ */
+int wait_connect(int sd, unsigned int timeout_in_ms)
+{
+
+    struct epoll_event connect_event;
+    int epoll_fd, num_events, error;
+    socklen_t err_len;
+
+
+
+    if( errno != EINPROGRESS )
+        return -1;
+
+
+    epoll_fd = epoll_create(1);
+    if( epoll_fd == -1 )
+        return -1;
+
+
+
+    connect_event.data.fd = sd;
+    connect_event.events  = EPOLLOUT | EPOLLIN | EPOLLERR;
+
+    if( epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sd, &connect_event) == -1 )
+    {
+        close(epoll_fd);
+        return -1;
+    }
+
+
+    memset(&connect_event, 0, sizeof(struct epoll_event));
+    num_events = epoll_wait(epoll_fd, &connect_event, 1, timeout_in_ms);
+
+    if(num_events <= 0)
+    {
+        close(epoll_fd);
+        return -1;
+    }
+
+
+    error   = -1;
+    err_len = sizeof(error);
+
+    if( (getsockopt(sd, SOL_SOCKET, SO_ERROR, &error, &err_len) != 0) || (error != 0) )
+    {
+        close(epoll_fd);
+        return -1;
+    }
+
+
+    close(epoll_fd);
+    return 0;         //good job
 }
