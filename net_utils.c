@@ -499,3 +499,155 @@ int connect_to_socket(struct socket_param_t *socket_param)
     else
         return connect_to_ipv4_socket(socket_param);
 }
+
+
+
+/*
+ * des:  create passive (server) socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (only IPv4)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int create_passive_ipv4_socket(struct socket_param_t *socket_param)
+{
+    struct sockaddr_in  sin;   //for IPv4
+    int sd;
+    int on = 1;
+
+
+    memset(&sin, 0, sizeof(struct sockaddr_in));
+    sin.sin_family      = AF_INET;
+    sin.sin_port        = htons(socket_param->port);
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+
+
+    sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);
+    if( sd == -1 )
+        return -1;
+
+
+    //small hack that win error «Address already in use»
+    if( setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0 )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( bind(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) != 0 )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( (socket_param->type == SOCK_STREAM) && listen(sd, socket_param->queue_len) )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( socket_param->non_block && set_nonblock_mode(sd) )
+    {
+        close(sd);
+        return -1;  //can't set non_block mode
+    }
+
+
+    return sd; //good job
+}
+
+
+
+/*
+ * des:  create passive (server) socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (only IPv6)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int create_passive_ipv6_socket(struct socket_param_t *socket_param)
+{
+    struct sockaddr_in6  sin;   //for IPv6
+    int sd;
+    int on = 1;
+
+
+    memset(&sin, 0, sizeof(struct sockaddr_in6));
+    sin.sin6_family      = AF_INET6;
+    sin.sin6_flowinfo    = 0;
+    sin.sin6_port        = htons(socket_param->port);
+    sin.sin6_addr        = in6addr_any;
+
+
+
+    sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);
+    if( sd == -1 )
+        return -1;
+
+
+    //small hack that win error «Address already in use»
+    if( setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0 )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( bind(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in6)) != 0 )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( (socket_param->type == SOCK_STREAM) && listen(sd, socket_param->queue_len) )
+    {
+        close(sd);
+        return -1;
+    }
+
+
+    if( socket_param->non_block && set_nonblock_mode(sd) )
+    {
+        close(sd);
+        return -1;  //can't set non_block mode
+    }
+
+
+    return sd; //good job
+}
+
+
+
+/*
+ * des:  create passive (server) socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (IPv4 | IPv6)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int create_passive_socket(struct socket_param_t *socket_param)
+{
+
+    if( !socket_param )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    if(socket_param->domain == AF_INET6)
+        return create_passive_ipv6_socket(socket_param);
+    else
+        return create_passive_ipv4_socket(socket_param);
+
+}

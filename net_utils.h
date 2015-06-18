@@ -16,6 +16,7 @@ struct socket_param_t
     int         domain;       // PF_INET | PF_INET6 | PF_LOCAL  see man 3 socket
     int         type;         // SOCK_STREAM (TCP) | SOCK_DGRAM (UDP)
     int         protocol;     // IPPROTO_TCP | IPPROTO_UDP ...
+    uint16_t    queue_len;    // len for listen()
     int         non_block;    // != 0 - set non_block mode
 };
 
@@ -37,6 +38,10 @@ int connect_to_ipv4_socket(struct socket_param_t *socket_param);
 int connect_to_ipv6_socket(struct socket_param_t *socket_param);
 int connect_to_socket(struct socket_param_t *socket_param);
 
+
+int create_passive_ipv4_socket(struct socket_param_t *socket_param);
+int create_passive_ipv6_socket(struct socket_param_t *socket_param);
+int create_passive_socket(struct socket_param_t *socket_param);
 
 
 
