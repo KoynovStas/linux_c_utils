@@ -15,6 +15,7 @@
 
 
 #include "net_utils.h"
+#include "file_utils.h"
 
 
 
@@ -344,4 +345,157 @@ int wait_connect(int sd, unsigned int timeout_in_ms)
 
     close(epoll_fd);
     return 0;         //good job
+}
+
+
+
+/*
+ * des:  connecting to socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (only IPv4)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int connect_to_ipv4_socket(struct socket_param_t *socket_param)
+{
+
+    struct sockaddr_in  sin;   //for IPv4
+    int sd, ret;
+
+
+    memset(&sin, 0, sizeof(struct sockaddr_in));
+    sin.sin_family = AF_INET;
+    sin.sin_port   = htons(socket_param->port);
+
+
+    ret = get_addr_of_host(socket_param->host_or_IP, socket_param->domain, &sin.sin_addr);
+
+
+    //not host. IP?
+    if(ret != 0)
+        ret = inet_pton(socket_param->domain, socket_param->host_or_IP, &sin.sin_addr);
+
+
+    //if not IP, error
+    if(ret <= 0)
+        return -1;
+
+
+    sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);
+    if( sd == -1 )
+        return -1;
+
+
+    if( socket_param->non_block && set_nonblock_mode(sd) )
+    {
+        close(sd);
+        return -1;  //can't set non_block mode
+    }
+
+
+    if( socket_param->type == SOCK_DGRAM )
+        return sd; //good job
+
+
+    ret = connect(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in));
+    if( ret &&  wait_connect(sd, 2000) )
+    {
+        close(sd);
+        return -1;  //can't connect to socket
+    }
+
+
+    return sd; //good job
+}
+
+
+
+/*
+ * des:  connecting to socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (only IPv6)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int connect_to_ipv6_socket(struct socket_param_t *socket_param)
+{
+
+    struct sockaddr_in6  sin;   //for IPv6
+    int sd, ret;
+
+
+    memset(&sin, 0, sizeof(struct sockaddr_in6));
+    sin.sin6_family = AF_INET6;
+    sin.sin6_port   = htons(socket_param->port);
+
+
+    ret = get_addr_of_host(socket_param->host_or_IP, socket_param->domain, &sin.sin6_addr);
+
+
+    //not host. IP?
+    if(ret != 0)
+        ret = inet_pton(socket_param->domain, socket_param->host_or_IP, &sin.sin6_addr);
+
+
+    //if not IP, error
+    if(ret <= 0)
+        return -1;
+
+
+    sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);
+    if( sd == -1 )
+        return -1;
+
+
+    if( socket_param->non_block && set_nonblock_mode(sd) )
+    {
+        close(sd);
+        return -1;  //can't set non_block mode
+    }
+
+
+    if( socket_param->type == SOCK_DGRAM )
+        return sd; //good job
+
+
+    ret = connect(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in6));
+    if( ret &&  wait_connect(sd, 2000) )
+    {
+        close(sd);
+        return -1;  //can't connect to socket
+    }
+
+
+    return sd; //good job
+}
+
+
+
+/*
+ * des:  connecting to socket for parameters socket_param
+ *
+ *
+ * in:   socket_param  - socket parameters (IPv4 || IPv6)
+ *
+ * ret:  != -1 - success (socket descriptor)
+ *       == -1 - failure (see errno)
+ */
+int connect_to_socket(struct socket_param_t *socket_param)
+{
+
+    if( !socket_param  || !socket_param->host_or_IP )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    if(socket_param->domain == AF_INET6)
+        return connect_to_ipv6_socket(socket_param);
+    else
+        return connect_to_ipv4_socket(socket_param);
 }

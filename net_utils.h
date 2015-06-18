@@ -3,6 +3,23 @@
 
 
 
+#include <stdint.h>
+
+
+
+
+
+struct socket_param_t
+{
+    const char *host_or_IP;   // "google.com"  or "192.168.1.1"
+    uint16_t    port;
+    int         domain;       // PF_INET | PF_INET6 | PF_LOCAL  see man 3 socket
+    int         type;         // SOCK_STREAM (TCP) | SOCK_DGRAM (UDP)
+    int         protocol;     // IPPROTO_TCP | IPPROTO_UDP ...
+    int         non_block;    // != 0 - set non_block mode
+};
+
+
 
 
 
@@ -14,6 +31,14 @@ int get_ip_of_if(const char *if_name, int af, char *IP);
 
 
 int wait_connect(int sd, unsigned int timeout_in_ms);
+
+
+int connect_to_ipv4_socket(struct socket_param_t *socket_param);
+int connect_to_ipv6_socket(struct socket_param_t *socket_param);
+int connect_to_socket(struct socket_param_t *socket_param);
+
+
+
 
 
 

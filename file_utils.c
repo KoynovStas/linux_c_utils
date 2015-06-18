@@ -42,14 +42,14 @@ int set_blocking(int fd, int blocking)
 
 
 
-inline int set_nonblock_mode(int fd)
+int set_nonblock_mode(int fd)
 {
     return set_blocking(fd, 0);
 }
 
 
 
-inline int set_block_mode(int fd)
+int set_block_mode(int fd)
 {
     return set_blocking(fd, 1);
 }
