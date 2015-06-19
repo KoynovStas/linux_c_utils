@@ -146,7 +146,7 @@ int write_loop(int fd, char *buf, size_t buf_len, int timeout_in_usec, int count
     }
 
 
-    return  (buf_len - len);  //return length of data writing
+    return (buf_len - len);  //return length of data writing
 }
 
 

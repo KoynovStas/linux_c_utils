@@ -651,3 +651,123 @@ int create_passive_socket(struct socket_param_t *socket_param)
         return create_passive_ipv4_socket(socket_param);
 
 }
+
+
+
+/*
+ * des:  The send_loop() function shall attempt to write buf_len bytes from the buffer
+ *       pointed to by buf to the socket associated with the open socket descriptor, sd.
+ *
+ * in:   sd              - socket descriptor
+ *       buf             - pointer to data buffer
+ *       buf_len         - count bytes for writing
+ *       timeout_in_usec - timeout between cycles writing
+ *       count_loop      - number of attempts to writing
+ *
+ * ret:  >= 0 - the number of bytes actually written to the socket associated with sd
+ *         -1 - failure (see errno)
+ */
+int send_loop(int sd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop)
+{
+
+    int   n, len;
+
+
+    if( !buf || !buf_len )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    len = buf_len;
+
+    while( (len > 0) && (count_loop-- > 0) )
+    {
+
+        n = send(sd, buf, len, 0);
+
+        if( (n == -1) && (errno != EAGAIN) )
+            return -1;                       // error sending
+
+
+        if( n > 0 )
+        {
+            buf += n;
+            len -= n;
+        }
+
+
+        if(len <= 0)
+            break;
+
+
+        usleep(timeout_in_usec);
+    }
+
+
+    return (buf_len - len);  //return length of data sending
+}
+
+
+
+/*
+ * des:  The recv_loop() function shall attempt to read buf_len bytes from
+ *       the socket associated with the open socket descriptor sd,
+ *       into the buffer pointed to by buf.
+ *
+ * in:   sd              - socket descriptor
+ *       buf             - pointer to data buffer
+ *       buf_len         - count bytes for reading
+ *       timeout_in_usec - timeout between cycles reading
+ *       count_loop      - number of attempts to reading
+ *
+ * ret:  >= 0 - number of bytes actually read from the socket associated with sd
+ *         -1 - failure (see errno)
+ */
+int recv_loop(int sd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop)
+{
+
+    int   n, len;
+
+
+    if( !buf || !buf_len )
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+
+    len = buf_len;
+
+    while( (len > 0) && (count_loop-- > 0) )
+    {
+
+        n = recv(sd, buf, len, 0);
+
+
+        if( (n == -1) && (errno != EAGAIN) )
+            return -1;                       // error reading
+
+
+        if( n == 0 )
+            return -1;                       // the connection is already closed by the client
+
+
+        if( n > 0 )
+        {
+            buf += n;
+            len -= n;
+        }
+
+
+        if(len <= 0)
+            break;
+
+
+        usleep(timeout_in_usec);
+    }
+
+
+    return (buf_len - len);  //return length of data reading
+}

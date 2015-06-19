@@ -44,6 +44,10 @@ int create_passive_ipv6_socket(struct socket_param_t *socket_param);
 int create_passive_socket(struct socket_param_t *socket_param);
 
 
+int send_loop(int sd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop);
+int recv_loop(int sd, char *buf, size_t buf_len, int timeout_in_usec, int count_loop);
+
+
 
 
 
