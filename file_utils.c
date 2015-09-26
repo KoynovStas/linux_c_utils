@@ -5,11 +5,54 @@
 #include <dirent.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 
 #include "file_utils.h"
 
 
+
+
+
+/*
+ * des: Get size of a file in bytes.
+ *
+ * in:  file_name  - The full path to file
+ *
+ * ret:  0 - success
+ *      -1 - failure (see errno) off_t is a signed type so this is possible.
+ */
+off_t file_size(const char *file_name)
+{
+    struct stat st;
+
+    if(stat(file_name, &st) == 0)
+        return st.st_size;
+
+
+    return -1; //error Can't get info for file (see errno)
+}
+
+
+
+/*
+ * des: Get size of a file in bytes.
+ *
+ * in:  fd - The file descriptor
+ *
+ * ret:  0 - success
+ *      -1 - failure (see errno) off_t is a signed type so this is possible.
+ */
+off_t ffile_size(int fd)
+{
+    struct stat st;
+
+    if(fstat(fd, &st) == 0)
+        return st.st_size;
+
+
+    return -1; //error Can't get info for file (see errno)
+}
 
 
 

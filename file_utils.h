@@ -4,6 +4,10 @@
 
 
 
+off_t file_size(const char *file_name);
+off_t ffile_size(int fd);
+
+
 
 int set_blocking(int fd, int blocking);
 
