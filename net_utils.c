@@ -6,13 +6,8 @@
 #include <fcntl.h>
 
 #include <sys/epoll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netdb.h>
-
-
 
 #include "net_utils.h"
 #include "file_utils.h"
@@ -25,34 +20,38 @@
 
 
 /*
- * des:   get_addr_of_host function returns IP-address in,
+ * des:   host_or_ip_to_addr function returns IP-address in,
  *        given in network byte order for host (host_name).
  *        for converting this address to a string, use the inet_ntop().
  *
  *
- * in:   host_name - the host name in a string format of such "yandex.ru"
- *       af        - valid address types are AF_INET and AF_INET6
+ * in:   host_or_IP- the host name in a string format of such "yandex.ru"
+ *                   or IPv4 (xxx.xxx.xxx.xxx) or IPv6 see (RFC 1884)
+ *                   or see: man gethostbyname2
+ *       af        - valid address types are AF_INET or AF_INET6
  *       addr      - a pointer to the structure of the address,
  *                   which will be copied to the host address.
  *                   This format is an IP address is necessary
  *                   in functions such as connect()
+ *                   for AF_INET:  struct sockaddr_in  *addr
+ *                   for AF_INET6: struct sockaddr_in6 *addr
  *
  * ret:  0 - success
  *      -1 - failure (see errno)
  */
-int get_addr_of_host(const char *host_name, int af, void *addr)
+int host_or_ip_to_addr(const char *host_or_IP, int af, void *addr)
 {
     struct hostent *host;
 
 
-    if( !host_name || !addr )
+    if( !host_or_IP || !addr )
     {
         errno = EINVAL;
         return -1;
     }
 
 
-    host = gethostbyname2(host_name, af);
+    host = gethostbyname2(host_or_IP, af);
     if( !host )
       return -1;                        //possible DNS is not configured
 
@@ -62,7 +61,7 @@ int get_addr_of_host(const char *host_name, int af, void *addr)
 
 
     if( !host->h_addr_list[0] )
-      return -1;                        //host is found, but no associated IP no.
+      return -1;                        //host is found, but no associated IP.
 
 
     memcpy(addr, host->h_addr_list[0], host->h_length);
@@ -110,7 +109,7 @@ int get_ip_of_host(const char *host_name, int af, char *IP)
 
 
     if( !host->h_addr_list[0] )
-      return -1;                        //host is found, but no associated IP no.
+      return -1;                        //host is found, but no associated IP.
 
 
     if(inet_ntop(af, (void *)host->h_addr_list[0], IP, addrstr_len) == NULL)
@@ -370,17 +369,9 @@ int connect_to_ipv4_socket(struct socket_param_t *socket_param)
     sin.sin_port   = htons(socket_param->port);
 
 
-    ret = get_addr_of_host(socket_param->host_or_IP, socket_param->domain, &sin.sin_addr);
-
-
-    //not host. IP?
-    if(ret != 0)
-        ret = inet_pton(socket_param->domain, socket_param->host_or_IP, &sin.sin_addr);
-
-
-    //if not IP, error
-    if(ret <= 0)
-        return -1;
+    ret = host_or_ip_to_addr(socket_param->host_or_IP, socket_param->domain, &sin.sin_addr);
+    if( ret != 0 )
+        return -1;     //Can't get addr from host or IP
 
 
     sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);
@@ -433,17 +424,9 @@ int connect_to_ipv6_socket(struct socket_param_t *socket_param)
     sin.sin6_port   = htons(socket_param->port);
 
 
-    ret = get_addr_of_host(socket_param->host_or_IP, socket_param->domain, &sin.sin6_addr);
-
-
-    //not host. IP?
-    if(ret != 0)
-        ret = inet_pton(socket_param->domain, socket_param->host_or_IP, &sin.sin6_addr);
-
-
-    //if not IP, error
-    if(ret <= 0)
-        return -1;
+    ret = host_or_ip_to_addr(socket_param->host_or_IP, socket_param->domain, &sin.sin6_addr);
+    if( ret != 0 )
+        return -1;     //Can't get addr from host or IP
 
 
     sd = socket(socket_param->domain, socket_param->type, socket_param->protocol);

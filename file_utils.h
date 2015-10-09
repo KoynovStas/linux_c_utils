@@ -2,6 +2,10 @@
 #define FILE_UTILS_HEADER
 
 
+#include <sys/types.h>
+
+
+
 
 
 off_t file_size(const char *file_name);

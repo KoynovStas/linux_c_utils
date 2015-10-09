@@ -2,8 +2,10 @@
 #define NET_UTILS_HEADER
 
 
-
 #include <stdint.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 
@@ -24,7 +26,7 @@ struct socket_param_t
 
 
 
-int get_addr_of_host(const char *host_name, int af, void *addr);
+int host_or_ip_to_addr(const char *host_or_IP, int af, void *addr);
 int get_ip_of_host(const char *host_name, int af, char *IP);
 
 int get_addr_of_if(const char *if_name, int af, void *addr);
